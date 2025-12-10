@@ -8,14 +8,11 @@
  * Nome do Programa: threads.c
  *
  * Descrição:
- *     Este programa gera um vetor com 10.000 números inteiros aleatórios
- *     no intervalo [0, 100] e calcula três métricas estatísticas:
- *     média aritmética, mediana e desvio padrão populacional.
- *     A execução utiliza três threads independentes, cada uma responsável
- *     por um cálculo específico. Os resultados são armazenados em variáveis
- *     globais e exibidos pela thread principal após a conclusão de todas
- *     as threads. O programa mede o tempo de criação das threads e o tempo
- *     total de execução.
+ *     Gera 10.000 números aleatórios entre 0 e 100 e calcula média,
+ *     mediana e desvio padrão usando três threads paralelas.
+ *     Cada thread faz um cálculo diferente e salva o resultado em
+ *     variáveis globais. A thread principal mostra os resultados
+ *     depois que todas terminam. Mede tempo de criação e execução.
  */
 
 #include <stdio.h>
@@ -37,7 +34,7 @@ double resultado_desvio = 0.0;
 // Vetor global compartilhado entre as threads
 int valores[N_ENTRADAS];
 
-// Função auxiliar para comparar inteiros (usada no qsort)
+// Compara dois inteiros (usado pelo qsort)
 int comparar(const void *a, const void *b) {
     int int_a = *((int*)a);
     int int_b = *((int*)b);
@@ -47,7 +44,7 @@ int comparar(const void *a, const void *b) {
     return 0;
 }
 
-// Função executada pela thread que calcula a média
+// Thread que calcula a média
 void* thread_media(void *arg) {
     long long soma = 0;
     
@@ -60,9 +57,9 @@ void* thread_media(void *arg) {
     pthread_exit(NULL);
 }
 
-// Função executada pela thread que calcula a mediana
+// Thread que calcula a mediana
 void* thread_mediana(void *arg) {
-    // Cria cópia do vetor para não modificar o original
+    // Copia o vetor para não alterar o original
     int *copia = (int*)malloc(N_ENTRADAS * sizeof(int));
     if (copia == NULL) {
         fprintf(stderr, "Erro ao alocar memória para cópia do vetor\n");
@@ -77,10 +74,10 @@ void* thread_mediana(void *arg) {
     qsort(copia, N_ENTRADAS, sizeof(int), comparar);
     
     if (N_ENTRADAS % 2 == 0) {
-        // Tamanho par: média dos dois elementos centrais
+        // Par: média dos dois do meio
         resultado_mediana = (copia[N_ENTRADAS/2] + copia[N_ENTRADAS/2 - 1]) / 2.0;
     } else {
-        // Tamanho ímpar: elemento central
+        // Ímpar: elemento do meio
         resultado_mediana = copia[N_ENTRADAS/2];
     }
     
@@ -88,9 +85,9 @@ void* thread_mediana(void *arg) {
     pthread_exit(NULL);
 }
 
-// Função executada pela thread que calcula o desvio padrão
+// Thread que calcula o desvio padrão
 void* thread_desvio(void *arg) {
-    // Primeiro calcula a média (necessária para o desvio padrão)
+    // Calcula a média primeiro (precisa para o desvio)
     long long soma = 0;
     
     for (int i = 0; i < N_ENTRADAS; i++) {
@@ -99,7 +96,7 @@ void* thread_desvio(void *arg) {
     
     double media_local = (double)soma / N_ENTRADAS;
     
-    // Calcula a soma dos quadrados das diferenças
+    // Soma dos quadrados das diferenças
     double soma_quadrados = 0.0;
     
     for (int i = 0; i < N_ENTRADAS; i++) {
@@ -114,10 +111,10 @@ void* thread_desvio(void *arg) {
 }
 
 int main() {
-    // Inicializa gerador de números aleatórios
+    // Inicializa gerador aleatório
     srand(time(NULL));
     
-    // Preenche o vetor com valores aleatórios entre 0 e 100
+    // Preenche o vetor com números aleatórios de 0 a 100
     for (int i = 0; i < N_ENTRADAS; i++) {
         valores[i] = rand() % (MAX_VALOR - MIN_VALOR + 1) + MIN_VALOR;
     }
@@ -126,56 +123,56 @@ int main() {
     printf("  EXECUÇÃO COM TRÊS THREADS\n");
     printf("========================================\n\n");
     
-    // Inicia medição de tempo total
+    // Começa a medir o tempo total
     struct timeval inicio_total, fim_total;
     gettimeofday(&inicio_total, NULL);
     
-    // Inicia medição de tempo de criação das threads
+    // Começa a medir o tempo de criação
     struct timeval inicio_criacao, fim_criacao;
     gettimeofday(&inicio_criacao, NULL);
     
-    // Declara identificadores das threads
+    // IDs das threads
     pthread_t thread1, thread2, thread3;
     int ret1, ret2, ret3;
     
-    // Cria a primeira thread (cálculo da média)
+    // Cria thread da média
     ret1 = pthread_create(&thread1, NULL, thread_media, NULL);
     if (ret1 != 0) {
         fprintf(stderr, "Erro ao criar thread de média: %d\n", ret1);
         return EXIT_FAILURE;
     }
     
-    // Cria a segunda thread (cálculo da mediana)
+    // Cria thread da mediana
     ret2 = pthread_create(&thread2, NULL, thread_mediana, NULL);
     if (ret2 != 0) {
         fprintf(stderr, "Erro ao criar thread de mediana: %d\n", ret2);
         return EXIT_FAILURE;
     }
     
-    // Cria a terceira thread (cálculo do desvio padrão)
+    // Cria thread do desvio padrão
     ret3 = pthread_create(&thread3, NULL, thread_desvio, NULL);
     if (ret3 != 0) {
         fprintf(stderr, "Erro ao criar thread de desvio padrão: %d\n", ret3);
         return EXIT_FAILURE;
     }
     
-    // Finaliza medição de tempo de criação
+    // Para de medir o tempo de criação
     gettimeofday(&fim_criacao, NULL);
     
-    // Aguarda todas as threads terminarem
+    // Espera todas as threads terminarem
     pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
     pthread_join(thread3, NULL);
     
-    // Finaliza medição de tempo total
+    // Para de medir o tempo total
     gettimeofday(&fim_total, NULL);
     
-    // Calcula tempo de criação em milissegundos
+    // Calcula tempo de criação (ms)
     long segundos_criacao = fim_criacao.tv_sec - inicio_criacao.tv_sec;
     long microsegundos_criacao = fim_criacao.tv_usec - inicio_criacao.tv_usec;
     double tempo_criacao = (segundos_criacao * 1000.0) + (microsegundos_criacao / 1000.0);
     
-    // Calcula tempo total em milissegundos
+    // Calcula tempo total (ms)
     long segundos_total = fim_total.tv_sec - inicio_total.tv_sec;
     long microsegundos_total = fim_total.tv_usec - inicio_total.tv_usec;
     double tempo_total = (segundos_total * 1000.0) + (microsegundos_total / 1000.0);

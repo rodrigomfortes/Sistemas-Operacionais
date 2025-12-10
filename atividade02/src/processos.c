@@ -8,14 +8,11 @@
  * Nome do Programa: processos.c
  *
  * Descrição:
- *     Este programa gera um vetor com 10.000 números inteiros aleatórios
- *     no intervalo [0, 100] e calcula três métricas estatísticas:
- *     média aritmética, mediana e desvio padrão populacional.
- *     A execução utiliza três processos criados com fork(), permitindo
- *     paralelizar partes do cálculo. Pipes são usados para comunicação
- *     e envio dos resultados entre processos, garantindo uma saída
- *     organizada e padronizada no terminal. O programa mede o tempo de
- *     criação dos processos e o tempo total de execução.
+ *     Gera 10.000 números aleatórios entre 0 e 100 e calcula média,
+ *     mediana e desvio padrão usando três processos criados com fork().
+ *     Cada processo faz um cálculo e envia o resultado para o processo
+ *     pai através de pipes. Mede tempo de criação dos processos e
+ *     tempo total de execução.
  */
 
 #include <stdio.h>
@@ -41,7 +38,7 @@ typedef enum {
 // Vetor global compartilhado (herdado pelos processos filhos via fork)
 int valores[N_ENTRADAS];
 
-// Função auxiliar para comparar inteiros (usada no qsort)
+// Compara dois inteiros (usado pelo qsort)
 int comparar(const void *a, const void *b) {
     int int_a = *((int*)a);
     int int_b = *((int*)b);
@@ -51,19 +48,19 @@ int comparar(const void *a, const void *b) {
     return 0;
 }
 
-// Função executada pelo processo filho que calcula a média
+// Processo filho que calcula a média
 void calcular_media(int write_fd) {
     long long soma = 0;
     
-    // Soma todos os valores do vetor
+    // Soma todos os valores
     for (int i = 0; i < N_ENTRADAS; i++) {
         soma += valores[i];
     }
     
-    // Calcula a média aritmética
+    // Calcula a média
     double media = (double)soma / N_ENTRADAS;
     
-    // Envia o tipo de resultado e o valor através do pipe
+    // Envia o resultado pelo pipe
     TipoResultado tipo = RESULTADO_MEDIA;
     if (write(write_fd, &tipo, sizeof(TipoResultado)) == -1) {
         perror("Erro ao escrever tipo no pipe");
@@ -78,9 +75,9 @@ void calcular_media(int write_fd) {
     _exit(EXIT_SUCCESS);
 }
 
-// Função executada pelo processo filho que calcula a mediana
+// Processo filho que calcula a mediana
 void calcular_mediana(int write_fd) {
-    // Cria cópia do vetor para não modificar o original
+    // Copia o vetor para não alterar o original
     int *copia = (int*)malloc(N_ENTRADAS * sizeof(int));
     if (copia == NULL) {
         fprintf(stderr, "Erro ao alocar memória para cópia do vetor\n");
@@ -96,16 +93,16 @@ void calcular_mediana(int write_fd) {
     
     double mediana;
     if (N_ENTRADAS % 2 == 0) {
-        // Tamanho par: média dos dois elementos centrais
+        // Par: média dos dois do meio
         mediana = (copia[N_ENTRADAS/2] + copia[N_ENTRADAS/2 - 1]) / 2.0;
     } else {
-        // Tamanho ímpar: elemento central
+        // Ímpar: elemento do meio
         mediana = copia[N_ENTRADAS/2];
     }
     
     free(copia);
     
-    // Envia o tipo de resultado e o valor através do pipe
+    // Envia o resultado pelo pipe
     TipoResultado tipo = RESULTADO_MEDIANA;
     if (write(write_fd, &tipo, sizeof(TipoResultado)) == -1) {
         perror("Erro ao escrever tipo no pipe");
@@ -120,9 +117,9 @@ void calcular_mediana(int write_fd) {
     _exit(EXIT_SUCCESS);
 }
 
-// Função executada pelo processo filho que calcula o desvio padrão
+// Processo filho que calcula o desvio padrão
 void calcular_desvio_padrao(int write_fd) {
-    // Primeiro calcula a média (necessária para o desvio padrão)
+    // Calcula a média primeiro (precisa para o desvio)
     long long soma = 0;
     
     for (int i = 0; i < N_ENTRADAS; i++) {
@@ -131,7 +128,7 @@ void calcular_desvio_padrao(int write_fd) {
     
     double media = (double)soma / N_ENTRADAS;
     
-    // Calcula a soma dos quadrados das diferenças
+    // Soma dos quadrados das diferenças
     double soma_quadrados = 0.0;
     
     for (int i = 0; i < N_ENTRADAS; i++) {
@@ -139,11 +136,11 @@ void calcular_desvio_padrao(int write_fd) {
         soma_quadrados += diferenca * diferenca;
     }
     
-    // Calcula o desvio padrão populacional
+    // Calcula o desvio padrão
     double variancia = soma_quadrados / N_ENTRADAS;
     double desvio = sqrt(variancia);
     
-    // Envia o tipo de resultado e o valor através do pipe
+    // Envia o resultado pelo pipe
     TipoResultado tipo = RESULTADO_DESVIO;
     if (write(write_fd, &tipo, sizeof(TipoResultado)) == -1) {
         perror("Erro ao escrever tipo no pipe");
@@ -159,10 +156,10 @@ void calcular_desvio_padrao(int write_fd) {
 }
 
 int main() {
-    // Inicializa gerador de números aleatórios
+    // Inicializa gerador aleatório
     srand(time(NULL));
     
-    // Preenche o vetor com valores aleatórios entre 0 e 100
+    // Preenche o vetor com números aleatórios de 0 a 100
     for (int i = 0; i < N_ENTRADAS; i++) {
         valores[i] = rand() % (MAX_VALOR - MIN_VALOR + 1) + MIN_VALOR;
     }
@@ -172,25 +169,25 @@ int main() {
     printf("========================================\n\n");
     printf("PID do processo pai: %d\n\n", getpid());
     
-    // Cria o pipe para comunicação entre processos
+    // Cria o pipe para comunicação
     int pipe_fds[2];
     if (pipe(pipe_fds) == -1) {
         perror("Erro ao criar pipe");
         return EXIT_FAILURE;
     }
     
-    // Inicia medição de tempo total
+    // Começa a medir o tempo total
     struct timeval inicio_total, fim_total;
     gettimeofday(&inicio_total, NULL);
     
-    // Inicia medição de tempo de criação dos processos
+    // Começa a medir o tempo de criação
     struct timeval inicio_criacao, fim_criacao;
     gettimeofday(&inicio_criacao, NULL);
     
-    // Array para armazenar os PIDs dos processos filhos
+    // PIDs dos processos filhos
     pid_t pids[3];
     
-    // Cria o primeiro processo filho (cálculo da média)
+    // Cria processo da média
     pids[0] = fork();
     if (pids[0] == 0) {
         // Processo filho: fecha o lado de leitura do pipe
@@ -201,7 +198,7 @@ int main() {
         return EXIT_FAILURE;
     }
     
-    // Cria o segundo processo filho (cálculo da mediana)
+    // Cria processo da mediana
     pids[1] = fork();
     if (pids[1] == 0) {
         // Processo filho: fecha o lado de leitura do pipe
@@ -212,7 +209,7 @@ int main() {
         return EXIT_FAILURE;
     }
     
-    // Cria o terceiro processo filho (cálculo do desvio padrão)
+    // Cria processo do desvio padrão
     pids[2] = fork();
     if (pids[2] == 0) {
         // Processo filho: fecha o lado de leitura do pipe
@@ -223,18 +220,18 @@ int main() {
         return EXIT_FAILURE;
     }
     
-    // Finaliza medição de tempo de criação
+    // Para de medir o tempo de criação
     gettimeofday(&fim_criacao, NULL);
     
-    // Processo pai: fecha o lado de escrita do pipe
+    // Pai: fecha escrita do pipe
     close(pipe_fds[1]);
     
-    // Variáveis para armazenar os resultados recebidos
+    // Resultados recebidos
     double resultado_media = 0.0;
     double resultado_mediana = 0.0;
     double resultado_desvio = 0.0;
     
-    // Lê todos os resultados enviados pelos processos filhos
+    // Lê todos os resultados dos filhos
     int resultados_recebidos = 0;
     while (resultados_recebidos < 3) {
         TipoResultado tipo;
@@ -260,23 +257,23 @@ int main() {
         }
     }
     
-    // Fecha o lado de leitura do pipe
+    // Fecha leitura do pipe
     close(pipe_fds[0]);
     
-    // Aguarda todos os processos filhos terminarem
+    // Espera todos os filhos terminarem
     for (int i = 0; i < 3; i++) {
         waitpid(pids[i], NULL, 0);
     }
     
-    // Finaliza medição de tempo total
+    // Para de medir o tempo total
     gettimeofday(&fim_total, NULL);
     
-    // Calcula tempo de criação em milissegundos
+    // Calcula tempo de criação (ms)
     long segundos_criacao = fim_criacao.tv_sec - inicio_criacao.tv_sec;
     long microsegundos_criacao = fim_criacao.tv_usec - inicio_criacao.tv_usec;
     double tempo_criacao = (segundos_criacao * 1000.0) + (microsegundos_criacao / 1000.0);
     
-    // Calcula tempo total em milissegundos
+    // Calcula tempo total (ms)
     long segundos_total = fim_total.tv_sec - inicio_total.tv_sec;
     long microsegundos_total = fim_total.tv_usec - inicio_total.tv_usec;
     double tempo_total = (segundos_total * 1000.0) + (microsegundos_total / 1000.0);

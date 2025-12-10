@@ -8,12 +8,10 @@
  * Nome do Programa: single_thread.c
  *
  * Descrição:
- *     Este programa gera um vetor com 10.000 números inteiros aleatórios
- *     no intervalo [0, 100] e calcula três métricas estatísticas:
- *     média aritmética, mediana e desvio padrão populacional.
- *     Toda a execução ocorre em uma única thread, servindo como
- *     referência de desempenho para comparação com versões paralelas.
- *     O programa mede e exibe o tempo total de execução.
+ *     Gera 10.000 números aleatórios entre 0 e 100 e calcula média,
+ *     mediana e desvio padrão de forma sequencial (sem threads).
+ *     Usado como referência para comparar com versões paralelas.
+ *     Mostra o tempo total de execução.
  */
 
 #include <stdio.h>
@@ -26,7 +24,7 @@
 #define MIN_VALOR 0
 #define MAX_VALOR 100
 
-// Função auxiliar para comparar inteiros (usada no qsort)
+// Compara dois inteiros (usado pelo qsort)
 int comparar(const void *a, const void *b) {
     int int_a = *((int*)a);
     int int_b = *((int*)b);
@@ -36,7 +34,7 @@ int comparar(const void *a, const void *b) {
     return 0;
 }
 
-// Função para calcular a média aritmética
+// Calcula a média
 double calcular_media(int *valores, int tamanho) {
     long long soma = 0;
     
@@ -47,9 +45,9 @@ double calcular_media(int *valores, int tamanho) {
     return (double)soma / tamanho;
 }
 
-// Função para calcular a mediana
+// Calcula a mediana
 double calcular_mediana(int *valores, int tamanho) {
-    // Cria cópia do vetor para não modificar o original
+    // Copia o vetor para não alterar o original
     int *copia = (int*)malloc(tamanho * sizeof(int));
     if (copia == NULL) {
         fprintf(stderr, "Erro ao alocar memória para cópia do vetor\n");
@@ -65,10 +63,10 @@ double calcular_mediana(int *valores, int tamanho) {
     
     double mediana;
     if (tamanho % 2 == 0) {
-        // Tamanho par: média dos dois elementos centrais
+        // Par: média dos dois do meio
         mediana = (copia[tamanho/2] + copia[tamanho/2 - 1]) / 2.0;
     } else {
-        // Tamanho ímpar: elemento central
+        // Ímpar: elemento do meio
         mediana = copia[tamanho/2];
     }
     
@@ -76,7 +74,7 @@ double calcular_mediana(int *valores, int tamanho) {
     return mediana;
 }
 
-// Função para calcular o desvio padrão populacional
+// Calcula o desvio padrão
 double calcular_desvio_padrao(int *valores, int tamanho, double media) {
     double soma_quadrados = 0.0;
     
@@ -90,17 +88,17 @@ double calcular_desvio_padrao(int *valores, int tamanho, double media) {
 }
 
 int main() {
-    // Aloca memória para o vetor de valores
+    // Aloca memória para o vetor
     int *valores = (int*)malloc(N_ENTRADAS * sizeof(int));
     if (valores == NULL) {
         fprintf(stderr, "Erro ao alocar memória para o vetor\n");
         return EXIT_FAILURE;
     }
     
-    // Inicializa gerador de números aleatórios
+    // Inicializa gerador aleatório
     srand(time(NULL));
     
-    // Preenche o vetor com valores aleatórios entre 0 e 100
+    // Preenche o vetor com números aleatórios de 0 a 100
     for (int i = 0; i < N_ENTRADAS; i++) {
         valores[i] = rand() % (MAX_VALOR - MIN_VALOR + 1) + MIN_VALOR;
     }
@@ -109,7 +107,7 @@ int main() {
     printf("  EXECUÇÃO EM UMA ÚNICA THREAD\n");
     printf("========================================\n\n");
     
-    // Inicia medição de tempo
+    // Começa a medir o tempo
     struct timeval inicio, fim;
     gettimeofday(&inicio, NULL);
     
@@ -122,10 +120,10 @@ int main() {
     // Calcula desvio padrão
     double desvio = calcular_desvio_padrao(valores, N_ENTRADAS, media);
     
-    // Finaliza medição de tempo
+    // Para de medir o tempo
     gettimeofday(&fim, NULL);
     
-    // Calcula tempo total em milissegundos
+    // Calcula tempo total (ms)
     long segundos = fim.tv_sec - inicio.tv_sec;
     long microsegundos = fim.tv_usec - inicio.tv_usec;
     double tempo_total = (segundos * 1000.0) + (microsegundos / 1000.0);

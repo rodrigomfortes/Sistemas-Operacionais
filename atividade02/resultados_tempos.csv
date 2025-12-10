@@ -1,0 +1,6 @@
+Metodo,Média,Mediana,Desvio_Padrao,Tempo_Total_ms,Tempo_Criacao_ms
+Single-Process,49.907,50,29.2391,3.001,
+Processos (3),49.8569,50,29.1921,2.28462,0.961066
+Single Thread,50.7648,51,29.2604,0.446746,
+Threads (3),49.9179,50,28.9924,0.953454,0.300619
+

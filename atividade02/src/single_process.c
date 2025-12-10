@@ -8,13 +8,10 @@
  * Nome do Programa: single_process.c
  *
  * Descrição:
- *     Este programa gera um vetor com 10.000 números inteiros aleatórios
- *     no intervalo [0, 100] e calcula três métricas estatísticas:
- *     média aritmética, mediana e desvio padrão populacional.
- *     Toda a execução ocorre em um único processo, sem uso de fork() ou
- *     pipes. O programa serve como base de comparação com a versão
- *     multiprocessada, permitindo medir o tempo de execução e observar
- *     diferenças de desempenho.
+ *     Gera 10.000 números aleatórios entre 0 e 100 e calcula média,
+ *     mediana e desvio padrão em um único processo (sem fork ou pipes).
+ *     Versão sequencial usada para comparar com a versão multiprocessada
+ *     e ver diferenças de desempenho.
  */
 
 #include <stdio.h>
@@ -28,7 +25,7 @@
 #define MIN_VALOR 0
 #define MAX_VALOR 100
 
-// Função auxiliar para comparar inteiros (usada no qsort)
+// Compara dois inteiros (usado pelo qsort)
 int comparar(const void *a, const void *b) {
     int int_a = *((int*)a);
     int int_b = *((int*)b);
@@ -38,7 +35,7 @@ int comparar(const void *a, const void *b) {
     return 0;
 }
 
-// Função para calcular a média aritmética
+// Calcula a média
 double calcular_media(int *valores, int tamanho) {
     long long soma = 0;
     
@@ -49,9 +46,9 @@ double calcular_media(int *valores, int tamanho) {
     return (double)soma / tamanho;
 }
 
-// Função para calcular a mediana
+// Calcula a mediana
 double calcular_mediana(int *valores, int tamanho) {
-    // Cria cópia do vetor para não modificar o original
+    // Copia o vetor para não alterar o original
     int *copia = (int*)malloc(tamanho * sizeof(int));
     if (copia == NULL) {
         fprintf(stderr, "Erro ao alocar memória para cópia do vetor\n");
@@ -67,10 +64,10 @@ double calcular_mediana(int *valores, int tamanho) {
     
     double mediana;
     if (tamanho % 2 == 0) {
-        // Tamanho par: média dos dois elementos centrais
+        // Par: média dos dois do meio
         mediana = (copia[tamanho/2] + copia[tamanho/2 - 1]) / 2.0;
     } else {
-        // Tamanho ímpar: elemento central
+        // Ímpar: elemento do meio
         mediana = copia[tamanho/2];
     }
     
@@ -78,7 +75,7 @@ double calcular_mediana(int *valores, int tamanho) {
     return mediana;
 }
 
-// Função para calcular o desvio padrão populacional
+// Calcula o desvio padrão
 double calcular_desvio_padrao(int *valores, int tamanho, double media) {
     double soma_quadrados = 0.0;
     
